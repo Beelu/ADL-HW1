@@ -23,7 +23,7 @@ logging.basicConfig(
 def build_vocab(
     words: Counter, vocab_size: int, output_dir: Path, glove_path: Path
 ) -> None:
-    common_words = {w for w, _ in words.most_common(vocab_size)}
+    common_words = {w for w, _ in words.most_common(vocab_size)}        # 算出最常出現的字
     vocab = Vocab(common_words)
     vocab_path = output_dir / "vocab.pkl"
     with open(vocab_path, "wb") as f:
@@ -32,7 +32,7 @@ def build_vocab(
 
     glove: Dict[str, List[float]] = {}
     logging.info(f"Loading glove: {str(glove_path.resolve())}")
-    with open(glove_path) as fp:
+    with open(glove_path,encoding="utf-8") as fp:
         row1 = fp.readline()
         # if the first row is not header
         if not re.match("^[0-9]+ [0-9]+$", row1):

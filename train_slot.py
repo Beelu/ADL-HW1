@@ -8,6 +8,8 @@ import torch
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 from tqdm import tqdm, trange
+from seqeval.metrics import classification_report
+from seqeval.scheme import IOB2
 
 from dataset import SeqTaggingClsDataset
 from model import SeqTagger
@@ -92,6 +94,8 @@ def main(args):
         # TODO: Evaluation loop - calculate accuracy and save model weights
         # Optimize the validation process with `torch.no_grad()`
         model.eval()                    # 關閉Batch Normalization跟Dropout
+        a = []
+        b = []
         with torch.no_grad():           # 測試時，關閉autograd，不需偏微分做gradient descent，可加快測試速度。
             for batch_idx, batch in enumerate(testdataset):
                 loss = 0.0
@@ -109,6 +113,25 @@ def main(args):
                     test_acc += 1 if (test_pred[i] == intent[i]).sum().item() == len(test_pred[i]) else 0
                 test_loss += loss.item()
 
+                # test_pred = test_pred.cpu().numpy().tolist()
+                # intent = intent.cpu().numpy().tolist()
+                # for i in range(len(test_pred)):        # 再將數值轉成英文字
+                #     temp = []
+                #     for j in range(len(test_pred[i])):
+                #         # if test_pred[i][j] != 9:
+                #         temp.append(datasets['eval'].idx2label(test_pred[i][j]))
+                #     a.append(temp)
+                # for i in range(len(intent)):        # 再將數值轉成英文字
+                #     temp = []
+                #     for j in range(len(intent[i])):
+                #         # if intent[i][j] != 9:
+                #         temp.append(datasets['eval'].idx2label(intent[i][j]))
+                #     b.append(temp)
+                
+                # print(a)
+                # print(b)
+                # print(classification_report(a, b, mode='strict', scheme=IOB2))
+
             print('[{:03d}/{:03d}] Train Acc: {:3.6f} Loss: {:3.6f} | Val Acc: {:3.6f} loss: {:3.6f}'.format(
                 epoch + 1, args.num_epoch, train_acc/len(datasets[TRAIN]), train_loss/len(traindataset), test_acc/len(datasets[DEV]), test_loss/len(testdataset)
             ))
@@ -116,7 +139,7 @@ def main(args):
                 best_acc = test_acc
                 torch.save(model.state_dict(), args.ckpt_dir / "model.ckpt")
                 print('saving model with acc {:.3f}'.format(best_acc/len(datasets[DEV])))
-
+    
         pass
 
 
@@ -158,9 +181,9 @@ def parse_args() -> Namespace:
 
     # training
     parser.add_argument(
-        "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cpu"
+        "--device", type=torch.device, help="cpu, cuda, cuda:0, cuda:1", default="cuda:0"
     )
-    parser.add_argument("--num_epoch", type=int, default=20)
+    parser.add_argument("--num_epoch", type=int, default=100)
 
     args = parser.parse_args()
     return args
